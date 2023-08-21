@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "pyndn-json-patch"
+version = "0.1.0"
+description = ""
+authors = ["Xinyu Ma <ma.xinyu.26a@kyoto-u.jp>"]
+readme = "README.md"
+packages = [{include = "pyndn_json_patch"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.101.1"
+uvicorn = "^0.23.2"
+python-ndn = "^0.4.1"
+jsonpatch = "^1.33"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
