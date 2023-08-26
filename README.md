@@ -14,7 +14,18 @@ poetry run python -m uvicorn main:app --port 8000
 
 Then, browse http://127.0.0.1:8000/ to see the scene.
 
-# Examples on operating objects
+# Examples on aincraft
+
+- Run an instance on 8000: `poetry run python -m uvicorn main:app --port 8000`
+- Run an instance on 8001: `poetry run python -m uvicorn main:app --port 8001`
+- Connect to the 8000 instance http://127.0.0.1:8000/
+- Connect to the 8001 instance http://127.0.0.1:8001/
+- Use cursor left click to create boxes on the ground.
+  - Right click to move the camera.
+- Verify that boxes are synced.
+
+
+# Examples on operating objects (V1)
 
 ## Get the JSON representation of the box
 

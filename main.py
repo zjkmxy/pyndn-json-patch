@@ -1,5 +1,5 @@
 import json
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import asyncio as aio
@@ -20,6 +20,7 @@ HTML_TEMPLATE = r'''
   <meta charset="UTF-8">
   <title>Title</title>
   <script src="/static/aframe.js"></script>
+  <script src="/static/aincraft.js"></script>
 </head>
 <body>
 {0}
@@ -91,8 +92,14 @@ async def fetch_missing_data():
                         _, data, _ = await ndn_app.express(pkt_name, appv2.pass_all)
                         patch = bytes(data).decode()
                         logging.info(f'Fetched {enc.Name.to_str(pkt_name)}: {patch}')
-                        # Patch json
-                        obj_db.patch_item(json.loads(patch))
+                        try:
+                            # Patch json
+                            obj_db.patch_item(json.loads(patch))
+                            # Shoot to websocket
+                            for _, peer in peer_ws.items():
+                                await peer.send_json(json.loads(patch))
+                        except (ValueError, KeyError) as e:
+                            logging.error(f'[{enc.Name.to_str(pkt_name)}] Invalid patch {e}')
                     except types.InterestNack as e:
                         logging.info(f'[{enc.Name.to_str(pkt_name)}] Nacked with reason={e.reason}')
                     except types.InterestTimeout:
@@ -171,9 +178,37 @@ class BackgroundRunner:
 
 
 runner = BackgroundRunner()
+peer_ws = {}
+pid_max = 0
 
 
 @app.on_event('startup')
 async def app_startup():
     aio.create_task(runner.run_main())
 
+
+@app.websocket("/ws")
+async def ws_endpoint(websocket: WebSocket):
+    global pid_max
+    await websocket.accept()
+    pid = pid_max
+    pid_max += 1
+    peer_ws[pid] = websocket
+    try:
+        while True:
+            data = await websocket.receive_json()
+            logging.info(f'Received: {data}')
+            try:
+                # Local update
+                obj_db.patch_item(data)
+                # Generate sync packet
+                generate_svs_data(json.dumps(data).encode('utf-8'))
+
+                # Shoot to other local websocket (in case there are many)
+                for wsid, peer in peer_ws.items():
+                    if wsid != pid:
+                        await peer.send_json(data)
+            except (ValueError, KeyError) as e:
+                logging.error(f'Invalid patch from ws: {e}')
+    except WebSocketDisconnect:
+        del peer_ws[pid]

@@ -1,11 +1,15 @@
+import copy
+
 import jsonpatch
 
 
 class ObjDb:
     objs: dict[str, dict[int, any]]
+    patch_lst: list
 
     def __init__(self):
         self.objs = {}
+        self.patch_lst = []
 
     def resolve_json(self, name: str) -> dict[str, any]:
         obj = self.get_item(name)
@@ -122,63 +126,86 @@ class ObjDb:
             '@children': {
                 # -1 means latest version
                 # Note: this makes the object mutable. I did this only for demo.
-                'theBox': -1,
-                'theSphere': -1,
-                'theCylinder': -1,
-                'thePlane': -1,
-                'theSky': -1,
+                'assets': -1,
+                'ground': -1,
+                'background': -1,
+                'camera': -1,
             }
         })
         self.new_item({
-            '@type': 'a-box',
-            '@id': 'theBox',
+            '@type': 'a-assets',
             '@version': ver,
-            '@name': '/root/theBox',
-            '@children': {},
-            'position': '-1 0.5 -3',
-            'rotation': '0 45 0',
-            'color': '#4CC3D9'
+            '@name': '/root/assets',
+            '@id': 'assets',
+            '@children': {
+                'groundTexture': -1,
+                'skyTexture': -1,
+                'voxel': -1,
+            }
         })
         self.new_item({
-            '@type': 'a-sphere',
-            '@id': 'theSphere',
+            '@type': 'img',
             '@version': ver,
-            '@name': '/root/theSphere',
+            '@name': '/root/assets/groundTexture',
+            '@id': 'groundTexture',
             '@children': {},
-            'position': '0 1.25 -5',
-            'radius': 1.25,
-            'color': '#EF2D5E'
+            'src': '/static/floor.jpg',
+            'alt': ''
+        })
+        self.new_item({
+            '@type': 'img',
+            '@version': ver,
+            '@name': '/root/assets/skyTexture',
+            '@id': 'skyTexture',
+            '@children': {},
+            'src': '/static/sky.jpg',
+            'alt': ''
+        })
+        self.new_item({
+            '@type': 'a-mixin',
+            '@version': ver,
+            '@name': '/root/assets/voxel',
+            '@id': 'voxel',
+            '@children': {},
+            'geometry': 'primitive: box; height: 0.5; width: 0.5; depth: 0.5',
+            'material': 'shader: standard'
         })
         self.new_item({
             '@type': 'a-cylinder',
-            '@id': 'theCylinder',
             '@version': ver,
-            '@name': '/root/theCylinder',
+            '@name': '/root/ground',
+            '@id': 'voxel',
             '@children': {},
-            'position': '1 0.75 -3',
-            'radius': 0.5,
-            'height': 1.5,
-            'color': '#FFC65D'
-        })
-        self.new_item({
-            '@type': 'a-plane',
-            '@id': 'thePlane',
-            '@version': ver,
-            '@name': '/root/thePlane',
-            '@children': {},
-            'position': '0 0 -4',
-            'rotation': '-90 0 0',
-            'width': 4,
-            'height': 4,
-            'color': '#7BC8A4'
+            'src': '#groundTexture',
+            'radius': 32,
+            'height': 0.1,
         })
         self.new_item({
             '@type': 'a-sky',
-            '@id': 'theSky',
+            '@id': 'background',
             '@version': ver,
-            '@name': '/root/theSky',
+            '@name': '/root/background',
             '@children': {},
-            'color': '#ECECEC'
+            'src': '#skyTexture',
+            'radius': 30,
+            'theta-length': 90,
+        })
+        self.new_item({
+            '@type': 'a-camera',
+            '@id': 'camera',
+            '@version': ver,
+            '@name': '/root/camera',
+            '@children': {
+                'cursor': -1
+            },
+        })
+        self.new_item({
+            '@type': 'a-cursor',
+            '@id': 'cursor',
+            '@version': ver,
+            '@name': '/root/camera/cursor',
+            '@children': {},
+            'intersection-spawn': 'event: click; offset: 0.25 0.25 0.25; snap: 0.5 0.5 0.5; mixin: voxel',
         })
 
     def patch_item(self, patch: dict[str, any]):
@@ -211,3 +238,4 @@ class ObjDb:
             new_doc = jsonpatch.apply_patch(origin, [patch], False)
             new_doc['@version'] = ver
             self.objs[name][ver] = new_doc
+        self.patch_lst.append(copy.deepcopy(patch))
