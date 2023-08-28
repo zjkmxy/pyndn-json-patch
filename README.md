@@ -24,6 +24,10 @@ Then, browse http://127.0.0.1:8000/ to see the scene.
   - Right click to move the camera.
 - Verify that boxes are synced.
 
+Alternatively, an NDNts version is deployed at https://zjkmxy.web.app/,
+which is a static webpage compatible with the python-ndn version.
+
+Note: you still need a running localhost NFD instance to use the NDNts web for now.
 
 # Examples on operating objects (V1)
 
