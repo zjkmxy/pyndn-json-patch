@@ -217,11 +217,13 @@ class ObjDb:
             raise ValueError(f'Invalid patch: @version is required')
         prev = patch.get('@prev', -1)
         op = patch.get('op', '')
-        if op not in ['new', 'add', 'remove', 'replace']:
+        if op not in ['new', 'add', 'remove', 'replace', 'nop']:
             raise ValueError(f'Invalid patch: op is required')
         # The following code does not handle consensus problem
         # However, json patch can be modified to a CRDT
-        if op == 'new':
+        if op == 'nop':
+            pass
+        elif op == 'new':
             obj = patch.get('value', {})
             if not obj:
                 raise ValueError(f'Invalid patch: new: value is required')

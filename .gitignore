@@ -121,3 +121,7 @@ checkpoint
 
 # Special
 temp/
+logs
+dist
+bundle.js
+node_modules
